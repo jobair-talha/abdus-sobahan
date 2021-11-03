@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const { MongoClient } = require("mongodb");
+const ObjectId = require("mongodb").ObjectId;
 const cors = require("cors");
 const app = express();
 app.use(cors());
@@ -30,13 +31,37 @@ async function run() {
       const service = await cursor.toArray();
       res.send(service);
     });
+    app.get("/service/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const service = await serviceCollection.findOne(query);
+      res.send(service);
+    });
+    app.put("/service/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateService = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          service: updateService.service,
+          price: updateService.price,
+          details: updateService.details,
+          img: updateService.img,
+          day: updateService.day,
+        },
+      };
+      const result = await serviceCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.json(result);
+    });
   } finally {
     // await client.close();
   }
 }
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
 // https://stark-stream-55742.herokuapp.com/
 run().catch(console.dir);
 
